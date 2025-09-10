@@ -56,7 +56,7 @@ export default async function handler(req, res) {
     `;
 
     const data = await resend.emails.send({
-      from: 'CareSpace <noreply@care-space.jp>',
+      from: 'CareSpace <noreply@carespace.jp>',
       to: ['ryo.m6251@care-space.jp'],
       subject: `【CareSpace】新規お問い合わせ - ${companyName} ${name}様`,
       html: emailContent,
