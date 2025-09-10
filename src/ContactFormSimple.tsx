@@ -123,7 +123,8 @@ const ContactFormSimple: React.FC = () => {
 
     try {
       // Send to backend API
-      const response = await fetch('http://localhost:3005/api/send-email', {
+      const apiUrl = import.meta.env.VITE_API_URL || '/api/send';
+      const response = await fetch(apiUrl, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
