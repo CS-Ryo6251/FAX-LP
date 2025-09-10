@@ -13,6 +13,10 @@ app.use(express.json());
 
 // Email sending endpoint
 app.post('/api/send-email', async (req, res) => {
+  console.log('=== EMAIL SEND REQUEST ===');
+  console.log('API Key:', RESEND_API_KEY ? `${RESEND_API_KEY.substring(0, 10)}...` : 'NOT SET');
+  console.log('Request body:', JSON.stringify(req.body, null, 2));
+  
   const {
     companyName,
     facilityName,
@@ -23,6 +27,12 @@ app.post('/api/send-email', async (req, res) => {
     challenges,
     message
   } = req.body;
+
+  // Validate required fields
+  if (!companyName || !name || !email || !challenges) {
+    console.error('Missing required fields');
+    return res.status(400).json({ error: 'Missing required fields' });
+  }
 
   try {
     const emailContent = `
@@ -40,25 +50,52 @@ app.post('/api/send-email', async (req, res) => {
       
       <h3>解決したい業務の課題</h3>
       <ul>
-        ${challenges.map(challenge => `<li>${challenge}</li>`).join('')}
+        ${Array.isArray(challenges) ? challenges.map(challenge => `<li>${challenge}</li>`).join('') : '<li>データなし</li>'}
       </ul>
       
       <h3>お問い合わせ内容</h3>
       <p>${message || 'なし'}</p>
     `;
 
+    console.log('Sending email with Resend...');
+    console.log('From:', 'CareSpace <noreply@carespace.jp>');
+    console.log('To:', 'ryo.m6251@care-space.jp');
+    
     const data = await resend.emails.send({
       from: 'CareSpace <noreply@carespace.jp>',
-      to: ['ryo.m6251@care-space.jp'], // Resendの制限により、検証済みメールアドレスに送信
+      to: ['info@care-space.jp'], // Resendの制限により、検証済みメールアドレスに送信
       subject: `【CareSpace】新規お問い合わせ - ${companyName} ${name}様`,
       html: emailContent,
-      reply_to: email
+      reply_to: email,
+      headers: {
+        'X-Priority': '1',
+        'X-MSMail-Priority': 'High',
+        'Importance': 'high'
+      },
+      tags: [
+        {
+          name: 'category',
+          value: 'contact-form'
+        }
+      ]
     });
 
+    console.log('✅ Email sent successfully');
+    console.log('Resend response:', JSON.stringify(data, null, 2));
     res.status(200).json({ success: true, data });
   } catch (error) {
-    console.error('Failed to send email:', error);
-    res.status(500).json({ error: 'Failed to send email' });
+    console.error('❌ Failed to send email:', error);
+    console.error('Error details:', {
+      message: error.message,
+      name: error.name,
+      status: error.status,
+      response: error.response?.data
+    });
+    res.status(500).json({ 
+      error: 'Failed to send email',
+      details: error.message,
+      errorCode: error.status || error.code
+    });
   }
 });
 

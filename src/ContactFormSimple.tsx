@@ -123,7 +123,8 @@ const ContactFormSimple: React.FC = () => {
 
     try {
       // Send to backend API
-      const apiUrl = import.meta.env.VITE_API_URL || '/api/send';
+      const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:3005/api/send-email';
+      console.log('Sending to API:', apiUrl);
       const response = await fetch(apiUrl, {
         method: 'POST',
         headers: {
@@ -133,7 +134,9 @@ const ContactFormSimple: React.FC = () => {
       });
 
       if (!response.ok) {
-        throw new Error('Failed to send email');
+        const errorData = await response.json().catch(() => ({}));
+        console.error('API Error:', errorData);
+        throw new Error(errorData.details || `HTTP ${response.status}: ${response.statusText}`);
       }
 
       // Show success message
